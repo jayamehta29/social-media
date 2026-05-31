@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Post from '../post/Post'
-import Filter from '../filter/filter'
+import CustomNavbar from '../navbar/navbar'
 import { getPostData, getUsersData } from '../../servicces/services'
 import type { APIPostProps, FilteredPosts, PostProps } from '../../interface/interface'
 import './feed.css'
@@ -11,6 +11,7 @@ function App() {
   const [feedPosts, setFeedPosts] = useState<PostProps[]>([]);
   const [savedPosts, setSavedPosts] = useState<PostProps[]>([]);
   const [likedPosts, setLikedPosts] = useState<PostProps[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState("all");
 
   const toModel = () => {
     if (posts.length > 0) {
@@ -85,27 +86,31 @@ function App() {
     setFeedPosts((prev) => prev.filter((post) => post.id !== id));
   };
 
-  const setFilterPosts = (filter: string) => {
-    console.log('filtering by: ', filter);
-    debugger
-    if (filter === 'liked') {
-      setFeedPosts(likedPosts);
-    } else if (filter === 'bookmarked') {
-      setFeedPosts(savedPosts);
-    } else {
-      setFeedPosts(feedPosts);
-    }
-  }
-
   useEffect(() => {
     fetchData();
   }, []);
 
+  const setFilterPosts = (filter: string) => {
+    setSelectedFilter(filter);
+  }
+
+  const displayPosts = useMemo(() => {
+    if (selectedFilter === "liked") {
+      return feedPosts.filter((post) => post.liked);
+    }
+
+    if (selectedFilter === "bookmarked") {
+      return feedPosts.filter((post) => post.saved);
+    }
+
+    return feedPosts;
+  }, [selectedFilter, feedPosts]);
+
   return (
-    <>
-      <Filter feedPosts={feedPosts} onFilterChange={setFilterPosts} />
+    <div className="">
+      <CustomNavbar onFilterChange={setFilterPosts} />
       <div className="feed-container">
-        {feedPosts.map((post: PostProps) => (
+        {displayPosts.map((post: PostProps) => (
           <div className="post" key={`${post.id}`}>
             <Post
               {...post}
@@ -116,7 +121,7 @@ function App() {
           </div>
         ))}
       </div>
-    </>
+    </div>
   )
 }
 
